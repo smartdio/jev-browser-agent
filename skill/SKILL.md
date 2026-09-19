@@ -26,9 +26,4 @@ Companion materials (design doc, pilot scripts, archived reference implementatio
 - Login and CAPTCHA flows go through ego-browser's handOff; a classifier never bypasses them.
 - ego-browser's TaskSpace and user-takeover rules always take priority. This pattern only changes who decides the next step — not space or control management.
 - Persist state (space ID, goal, history) between rounds; script runs start fresh processes.
-
-## Status
-
-- 2026-09-19: skill created; first live run passed — X posting driven by two Jev decisions (conf 0.57 auto-degraded, 0.95 executed), published successfully.
-- Measured per decision: ~300 ms steady-state latency, ~600 input / 50–80 output tokens.
-- The official ego-browser skill directory is read-only; if experiments validate this pattern, propose it upstream to ego-lite rather than editing that skill in place.
+- The official ego-browser skill directory is read-only (symlinked from the ego-lite data dir); propose improvements upstream rather than editing it in place.
