@@ -2,7 +2,7 @@
 
 Experiments combining the official [ego-browser](https://github.com/ego-lite) skill with TypeSafe's Jev System One model: ego-browser handles observation (snapshot refs) and actions, Jev handles each step's decision ("which operation, which element") in roughly one second at near-zero cost.
 
-Part of a public test journal published at [@smardio](https://x.com/smardio); the full write-up (in Chinese) lives in the mai-unstoppable content project `jev-decision-model`.
+Part of a public test journal published at [@smardio](https://x.com/smardio); a full write-up (in Chinese) is available on request.
 
 ## What is here
 

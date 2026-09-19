@@ -1,53 +1,53 @@
 #!/usr/bin/env python3
-"""AGENTS.md 模型与推理路由器（Jev 版）
+"""Task-tier router on TypeSafe Jev.
 
-依据 mai-unstoppable/AGENTS.md「模型与推理深度」分级表，把任务描述路由到
-优先模型 + 起始推理深度。置信度低于阈值时升级给主代理（表内第 5 档原则）。
+Maps a task description to a model tier + starting reasoning depth using Jev
+as the classifier. Low-confidence answers fall back to the main agent.
 
-用法：
-    python3 model-router.py "任务描述文本"
-    python3 model-router.py            # 交互式逐条输入
+Usage:
+    python3 model-router.py "task description"
+    python3 model-router.py            # read task lines from stdin
 """
 import json
 import sys
 
 from typesafe_sdk import Choice, Score, TypeSafeClient
 
-# AGENTS.md 分级表（2026-09-15 核对版）
+# Tier table: adjust models and criteria to your own setup.
 TIERS = {
     "mechanical": {
         "model": "gpt-5.6-luna", "effort": "low",
-        "desc": "路径清点、字段提取、标签遗漏、冻结文本逐项比对；工具即可完成则不委派",
+        "desc": "Path enumeration, field extraction, tag audits, frozen-text diffing; if a tool can do it, do not delegate",
     },
     "general": {
         "model": "gpt-5.6-sol", "effort": "medium",
-        "desc": "已有母稿的平台改写、素材说明、常规来源核查、同口径数据整理",
+        "desc": "Routine rewrites from an approved master draft, source checks, like-for-like data cleanup",
     },
     "engineering": {
         "model": "gpt-5.6-terra", "effort": "medium",
-        "desc": "代码与工程文件定位、明确需求的 Remotion/官网局部实现、可复现修复",
+        "desc": "Code and infra localization, well-specified implementation tasks, reproducible fixes",
     },
     "review": {
         "model": "gpt-5.6-sol", "effort": "high",
-        "desc": "复杂稿件事实复核、指标口径冲突、重要成片或工程验收（工程逻辑复核可用 terra）",
+        "desc": "Fact re-verification, conflicting-metric arbitration, final acceptance of deliverables (engineering re-checks may use the coding model)",
     },
     "deep": {
-        "model": "主代理(必要时 gpt-6-astra)", "effort": "high~xhigh",
-        "desc": "多轮仍无法定位的故障、跨内容策略取舍、叙事与技术强耦合、重大不确定性",
+        "model": "main agent (escalate to flagship if needed)", "effort": "high~xhigh",
+        "desc": "Faults unresolved after several rounds, cross-cutting strategy trade-offs, strong narrative-technical coupling, major uncertainty",
     },
 }
 
 STATE_TMPL = (
-    "个人媒体项目（内容单元为中心）的任务分派。可执行档位及标准：\n"
+    "Task dispatch for a media/content project. Available tiers and their criteria:\n"
     + "\n".join(f"- {k}: {v['desc']}" for k, v in TIERS.items())
-    + "\n\n任务描述：{task}"
+    + "\n\nTask description: {task}"
 )
 
 EFFORT_RUBRIC = [
-    "1.0 需检查假设、反例、跨文件逻辑（验收级）",
-    "0.7 常规多步工作，需要中等推理",
-    "0.4 机械核对、输入完整规则确定",
-    "0.0 纯检索或单步操作",
+    "1.0 requires checking assumptions, counterexamples, cross-file logic (acceptance level)",
+    "0.7 routine multi-step work, medium reasoning",
+    "0.4 mechanical checks, complete input, fixed rules",
+    "0.0 pure lookup or single-step operation",
 ]
 
 
@@ -56,12 +56,12 @@ def route(client, task: str) -> dict:
         state=STATE_TMPL.format(task=task),
         questions={
             "tier": Choice(
-                instructions="按分级表标准，该任务最属于哪一档？"
-                             "注意：工具（脚本/命令）即可完成的不委派，选 mechanical。",
+                instructions="Which tier does this task belong to, per the tier criteria? "
+                             "Note: if a plain tool/script can do it, choose the mechanical tier instead of delegating.",
                 criteria={k: v["desc"] for k, v in TIERS.items()},
             ),
             "effort_need": Score(
-                instructions="该任务的推理深度需求，0 到 1",
+                instructions="Reasoning-depth requirement of this task, 0 to 1",
                 criteria=EFFORT_RUBRIC,
             ),
         },
@@ -77,9 +77,9 @@ def route(client, task: str) -> dict:
         "confidence": round(conf, 2),
         "probabilities": tier.probabilities,
     }
-    # 门控：低置信升级给主代理（AGENTS.md 第 5 档原则）
+    # Gate: low confidence escalates to the main agent
     if conf < 0.6:
-        result["gate"] = "LOW CONFIDENCE -> 主代理直接处理或重新描述任务"
+        result["gate"] = "LOW CONFIDENCE -> handle in the main agent, or re-describe the task"
     return result
 
 
@@ -97,6 +97,6 @@ if __name__ == "__main__":
     with client:
         for t in tasks:
             res = route(client, t)
-            print(f"任务: {t[:60]}")
+            print(f"Task: {t[:60]}")
             print(json.dumps(res, ensure_ascii=False, indent=2))
             print("-" * 60)
