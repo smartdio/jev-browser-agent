@@ -85,9 +85,18 @@ def route(client, task: str) -> dict:
 
 if __name__ == "__main__":
     tasks = sys.argv[1:] or [ln.strip() for ln in sys.stdin if ln.strip()]
-    with TypeSafeClient() as c:
+    try:
+        client = TypeSafeClient()
+    except Exception:
+        sys.exit(
+            "Missing TypeSafe API key.\n"
+            "  1. Get a key at https://typesafe.ai\n"
+            "  2. export TYPESAFE_API_KEY=<your key>   (or put it in your agent's .env)\n"
+            "Then re-run this command."
+        )
+    with client:
         for t in tasks:
-            res = route(c, t)
+            res = route(client, t)
             print(f"任务: {t[:60]}")
             print(json.dumps(res, ensure_ascii=False, indent=2))
             print("-" * 60)

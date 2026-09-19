@@ -38,12 +38,31 @@ Measured on a real X (Twitter) posting run: each Jev decision was 280–740 ms a
 
 ## Setup
 
+**Prerequisite: a TypeSafe API key.** Every script and skill here calls the TypeSafe API; without a key nothing runs. Get one first:
+
+1. Sign up at [typesafe.ai](https://typesafe.ai) and create an API key.
+2. Make it available to the SDK in one of these ways:
+
+```bash
+# Option A — shell environment
+export TYPESAFE_API_KEY=<your key>       # add to ~/.zshrc / ~/.bashrc to persist
+
+# Option B — agent .env (recommended for agent use)
+#   Hermes: append to ~/.hermes/.env
+#   Codex / other agents: append to the .env your agent loads
+TYPESAFE_API_KEY=<your key>
+```
+
+Keep the key server-side / out of committed files — never hardcode it in scripts.
+
+Then install and run:
+
 ```bash
 pip install typesafe-sdk          # Python SDK
-export TYPESAFE_API_KEY=...       # from typesafe.ai
-# ego-browser: install per its skill (references/install.md), then:
-python3 pilot/model-router.py "任务描述"   # route one task
+python3 pilot/model-router.py "task description"   # route one task
 ```
+
+For the browser pattern you also need the [ego-browser](https://github.com/ego-lite) skill installed and running.
 
 `skill/SKILL.md` installs like any Agent Skill: copy the folder into your skills directory (for Hermes: `~/.hermes/skills/jev-browser-agent/`).
 
